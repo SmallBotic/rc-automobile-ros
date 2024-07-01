@@ -29,5 +29,6 @@ void loop() {
   int dist = ultrasonic.getDistance();
 
   uros.publish(dist);
+  int data = uros.receiveSubscription();
   delay(50);
 }

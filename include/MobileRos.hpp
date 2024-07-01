@@ -13,6 +13,7 @@
 
 class MicroROS {
  private:
+  rcl_subscription_t subscriber;
   rcl_publisher_t publisher;
   std_msgs__msg__Int32 msg;
 
@@ -22,11 +23,10 @@ class MicroROS {
   rcl_node_t node;
   rcl_timer_t timer;
 
-  long previousErrorTime = 0;
+  long previousErrorTime;
 
   // Error handle loop
   void error_loop();
-  // void timer_callback(rcl_timer_t* timer, int64_t last_call_time);
 
 #define RCSOFTCHECK(fn)            \
   {                                \
@@ -47,6 +47,7 @@ class MicroROS {
   MicroROS();
   void init();
   void publish(int data);
+  int receiveSubscription();
 };
 
 #endif  // MOBILE_ROSS_HPP_

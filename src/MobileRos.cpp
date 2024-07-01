@@ -1,44 +1,21 @@
 #include "MobileRos.hpp"
 
-// rcl_publisher_t publisher;
-// std_msgs__msg__Int32 msg;
-// rclc_executor_t executor;
-// rclc_support_t support;
-// rcl_allocator_t allocator;
-// rcl_node_t node;
-// rcl_timer_t timer;
-
-// long previousErrorTime = 0;
-
 void MicroROS::error_loop() {
   while (1) {
-    if(millis() - previousErrorTime > 1000) {
+    if (millis() - previousErrorTime > 1000) {
       previousErrorTime = millis();
       DEBUG_PRINTLN("Error, stopping");
     }
   }
 }
 
-// void MicroROS::timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-//   RCLC_UNUSED(last_call_time);
-//   if (timer != NULL) {
-//     DEBUG_PRINTLN("Timer callback publishing message");
-//     RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-//     msg.data++;
-//     DEBUG_PRINT("Published: ");
-//     DEBUG_PRINTLN(msg.data);
-//   }
-// }
-
-MicroROS::MicroROS() {
-}
+MicroROS::MicroROS()
+    : previousErrorTime(0), allocator(rcl_get_default_allocator()) {}
 
 void MicroROS::init() {
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, ROS_AGENT_IP,
                                ROS_AGENT_PORT);
   delay(2000);
-
-  allocator = rcl_get_default_allocator();
 
   // create init_options
   DEBUG_PRINTLN("Creating init_options");
@@ -58,12 +35,12 @@ void MicroROS::init() {
       "micro_ros_platformio_node_publisher"));
   DEBUG_PRINTLN("Publisher created");
 
-  // create timer,
-  // const unsigned int timer_timeout = 1000;
-  // DEBUG_PRINTLN("Creating timer");
-  // RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(timer_timeout),
-  //                                 timer_callback));
-  // DEBUG_PRINTLN("Timer created");
+  // create subscription
+  DEBUG_PRINTLN("Creating subscription");
+  RCCHECK(rclc_subscription_init_default(
+      &subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      "micro_ros_platformio_node_subscriber"));
+  DEBUG_PRINTLN("Subscription created");
 
   // create executor
   DEBUG_PRINTLN("Creating executor");
@@ -82,4 +59,29 @@ void MicroROS::publish(int data) {
   DEBUG_PRINT("Published: ");
   DEBUG_PRINTLN(msg.data);
   RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
+}
+
+int MicroROS::receiveSubscription() {
+  std_msgs__msg__Int32 msg;
+  rcl_ret_t ret = rcl_take(&subscriber, &msg, NULL, NULL);
+  if (ret == RCL_RET_OK) {
+    DEBUG_PRINT("Received: ");
+    DEBUG_PRINTLN(msg.data);
+    return msg.data;
+  }else if (ret == RCL_RET_INVALID_ARGUMENT) {
+    DEBUG_PRINTLN("Invalid argument");
+  }else if (ret == RCL_RET_ERROR) {
+    DEBUG_PRINTLN("Error");
+  }else if (ret == RCL_RET_TIMEOUT) {
+    DEBUG_PRINTLN("Timeout");
+  }else if (ret == RCL_RET_BAD_ALLOC) {
+    DEBUG_PRINTLN("Bad alloc");
+  }else if (ret == RCL_RET_NODE_INVALID) {
+    DEBUG_PRINTLN("Node invalid");
+  }else if (ret == RCL_RET_NOT_INIT) {
+    DEBUG_PRINTLN("Not init");
+  }else{
+    DEBUG_PRINTF("Unknown error: %d", ret);
+  }
+  return -1;
 }
