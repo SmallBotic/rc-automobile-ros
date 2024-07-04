@@ -109,6 +109,12 @@ class NavigationSystem : private MPU6500_WE, private QMC5883LCompass {
    * @return float The angle in degrees
    */
   Vector3Angles getAngle();
+
+  /**
+   * @brief Combine all the navigation data
+   * @return String The stringified version of the navigation data
+   */
+  String stringify();
 };
 
 #endif  // NAVIGATION_SYSTEM_HPP_

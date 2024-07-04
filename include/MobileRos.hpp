@@ -7,6 +7,7 @@
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <std_msgs/msg/int32.h>
+#include <std_msgs/msg/string.h>
 
 #include <Config.hpp>
 #include <Credentials.hpp>
@@ -14,8 +15,10 @@
 class MicroROS {
  private:
   rcl_subscription_t subscriber;
-  rcl_publisher_t publisher;
-  std_msgs__msg__Int32 msg;
+  rcl_publisher_t distancePublisher, imuPublisher;
+
+  std_msgs__msg__Int32 distanceMsg;
+  String imuMsg;
 
   rclc_executor_t executor;
   rclc_support_t support;
@@ -44,10 +47,15 @@ class MicroROS {
   }
 
  public:
+  enum PublisherType { DISTANCE, IMU };
+
+ public:
   MicroROS();
   void init();
-  void publish(int data);
+  void publish(MicroROS::PublisherType type, int data);
+  void publish(MicroROS::PublisherType type, String data);
   int receiveSubscription();
+  rcl_publisher_t *getPublisher(MicroROS::PublisherType type);
 };
 
 #endif  // MOBILE_ROSS_HPP_

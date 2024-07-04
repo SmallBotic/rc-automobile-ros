@@ -26,9 +26,12 @@ void setup() {
 
 void loop() {
   nav.read();
-  int dist = ultrasonic.getDistance();
+  int distance = ultrasonic.getDistance();
+  String imu = nav.stringify();
 
-  uros.publish(dist);
+  uros.publish(MicroROS::DISTANCE, distance);
+  uros.publish(MicroROS::IMU, imu);
+  
   int data = uros.receiveSubscription();
   delay(50);
 }

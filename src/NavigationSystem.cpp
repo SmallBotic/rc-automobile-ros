@@ -70,3 +70,11 @@ int NavigationSystem::getHeading() { return _heading; }
 NavigationSystem::Vector3i NavigationSystem::getMagneticField() {
   return _magneticField;
 }
+
+String NavigationSystem::stringify() {
+  return String(_acceleration.x) + "," + String(_acceleration.y) + "," +
+         String(_acceleration.z) + "," + String(_gyroscope.x) + "," +
+         String(_gyroscope.y) + "," + String(_gyroscope.z) + "," +
+         String(_magneticField.x) + "," + String(_magneticField.y) + "," +
+         String(_magneticField.z);
+}
