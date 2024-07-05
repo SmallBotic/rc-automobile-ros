@@ -29,7 +29,6 @@ jobs:
 
       - name: Initialize PlatformIO environment
         run: |
-          pio home
           pio update
           pio upgrade --dev
           pio lib install
