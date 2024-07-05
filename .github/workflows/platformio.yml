@@ -20,8 +20,8 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: MicroROS Build Action
-        uses: samyarsadat/MicroROS-Build-Action@v1.1.0
+      - name: Activate PlatformIO environment
+        run: source /home/runner/.platformio/penv/bin/activate
 
       - name: Build PlatformIO Project
         run: pio run
