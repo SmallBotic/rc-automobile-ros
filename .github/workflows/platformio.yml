@@ -24,12 +24,13 @@ jobs:
 
       - name: Install PlatformIO Core
         run: |
-          python -m pip install --upgrade pip
-          pip install platformio
+          python3 -m pip install --upgrade pip
+          pip3 install platformio
 
       - name: Initialize PlatformIO environment
         run: |
-          pio system init
+          # pio system init
+          pio home
           pio update
           pio upgrade --dev
           pio lib install
