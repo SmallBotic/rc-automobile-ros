@@ -59,9 +59,9 @@ class MicroROS {
   void publish(MicroROS::PublisherType type, int data);
   void publish(MicroROS::PublisherType type, String data);
   void spin();
-  rcl_publisher_t *getPublisher(MicroROS::PublisherType type);
+  rcl_publisher_t* getPublisher(MicroROS::PublisherType type);
 
-  static void cmdVelSubCallback(const void *msgIn);
+  static void cmdVelSubCallback(const void* msgIn);
 };
 
 #endif  // MOBILE_ROSS_HPP_

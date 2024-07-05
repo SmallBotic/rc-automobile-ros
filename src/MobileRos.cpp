@@ -88,7 +88,7 @@ void MicroROS::init() {
 }
 
 void MicroROS::spin() {
-  rcl_ret_t x = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+  rcl_ret_t x = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
   // DEBUG_PRINTF("Spin: %d\n", x);
   RCCHECK(x);
 }
