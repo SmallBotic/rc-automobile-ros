@@ -1,6 +1,6 @@
 name: PlatformIO CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -8,17 +8,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-          key: ${{ runner.os }}-pio
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Initialize PlatformIO environment
+        run: |
+          pio system init
+          pio update
+          pio upgrade --dev
+          pio lib install
 
       - name: Install Micro_ROS dependencies
         run: |
@@ -31,6 +45,7 @@ jobs:
         run: |
           pio update
           pio lib install
-      
+
       - name: Build PlatformIO Project
         run: pio run
+
