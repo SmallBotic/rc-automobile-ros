@@ -4,16 +4,10 @@
 
 This repository contains the code for a remake of the [rc-automobile](https://github.com/SmallBotic/rc-automobile) project. The project aims to modify the original project and make it controllable through ROS via Micro-ROS.
 
-## Communication Diagram
-
-The following diagram shows the communication between the Micro-ROS automobile and the ROS 2 control node:
-![Communication Model](resources/rosgraph-rc-automobile.png)
-
 ## Table of Contents
 
 - [Communication Diagram](#communication-diagram)
 - [Description](#description)
-- [Table of Contents](#table-of-contents)
 - [Installation](#installation)
   - [Dependencies](#dependencies)
   - [Building](#building)
@@ -22,6 +16,11 @@ The following diagram shows the communication between the Micro-ROS automobile a
 - [Usage](#usage)
   - [Running the project](#running-the-project)
     - [Note](#note)
+
+## Communication Diagram
+
+The following diagram shows the communication between the Micro-ROS automobile and the ROS 2 control node:
+![Communication Model](./resources/rosgraph-rc-automobile.png)
 
 ## Installation
 
