@@ -2,9 +2,9 @@
 
 void MicroROS::error_loop() {
   while (1) {
-    if (millis() - previousErrorTime > 1000) {
+    if (millis() - previousErrorTime > MICRO_ROS_ERROR_TIMEOUT) {
       previousErrorTime = millis();
-      DEBUG_PRINTLN("Error, stopping");
+      DEBUG_PRINTLN("\t\tError, stopping");
     }
   }
 }
@@ -12,19 +12,35 @@ void MicroROS::error_loop() {
 MicroROS::MicroROS()
     : previousErrorTime(0), allocator(rcl_get_default_allocator()) {}
 
+MicroROS::~MicroROS() {
+  RCCHECK(rcl_publisher_fini(&distancePublisher, &node));
+  RCCHECK(rcl_publisher_fini(&imuPublisher, &node));
+  RCCHECK(rcl_subscription_fini(&cmdVelSubscriber, &node));
+  RCCHECK(rcl_node_fini(&node));
+  RCCHECK(rclc_executor_fini(&executor));
+}
+
 void MicroROS::init() {
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, ROS_AGENT_IP,
                                ROS_AGENT_PORT);
   delay(2000);
 
+  // Create init_options.
+  rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+  RCCHECK(rcl_init_options_init(&init_options, allocator));
+
   // create init_options
   DEBUG_PRINTLN("Creating init_options");
-  RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
-  DEBUG_PRINTLN("Init_options created");
+  // RCCHECK(rclc_support_init(&support, 0, NULL, &allocator));
+  RCCHECK(rclc_support_init_with_options(&support, 0, NULL, &init_options,
+                                         &allocator));
+  DEBUG_PRINTLN("Init options created");
 
   // create node
   DEBUG_PRINTLN("Creating node");
-  RCCHECK(rclc_node_init_default(&node, MICRO_ROS_NODE_NAME, "", &support));
+  node = rcl_get_zero_initialized_node();
+  RCCHECK(rclc_node_init_default(&node, MICRO_ROS_NODE_NAME,
+                                 MICRO_ROS_NODE_NAMESPACE, &support));
   DEBUG_PRINTLN("Node created");
 
   // create publishers
@@ -41,79 +57,87 @@ void MicroROS::init() {
   // create subscriptions
   DEBUG_PRINTLN("Creating subscriptions");
   RCCHECK(rclc_subscription_init_default(
-      &subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      // twist messg sub
+      &cmdVelSubscriber, &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
       MICRO_ROS_CMD_VEL_SUBSCRIPTION_TOPIC));
   DEBUG_PRINTLN("Subscriptions created");
 
   // create executor
   DEBUG_PRINTLN("Creating executor");
-  RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+  executor = rclc_executor_get_zero_initialized_executor();
+  RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
   DEBUG_PRINTLN("Executor created");
 
   DEBUG_PRINTLN("Adding timer to executor");
+  unsigned int rcl_wait_timeout = 1000;  // in ms
+  RCCHECK(rclc_timer_init_default(&timer, &support,
+                                  RCL_MS_TO_NS(rcl_wait_timeout), NULL));
+  // RCCHECK(rclc_executor_set_timeout(&executor,
+  // RCL_MS_TO_NS(rcl_wait_timeout)));
   RCCHECK(rclc_executor_add_timer(&executor, &timer));
-  DEBUG_PRINTLN("Timer added to executor");
+  DEBUG_PRINTLN("Timer created and added to executor");
+
+  DEBUG_PRINTLN("Adding subscription to executor");
+  RCCHECK(rclc_executor_add_subscription(&executor, &cmdVelSubscriber,
+                                         &controlMsg, &cmdVelSubCallback,
+                                         ON_NEW_DATA));
+  DEBUG_PRINTLN("Subscription added to executor");
 
   distanceMsg.data = 0;
 }
 
+void MicroROS::spin() {
+  rcl_ret_t x = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+  // DEBUG_PRINTF("Spin: %d\n", x);
+  RCCHECK(x);
+}
+
 void MicroROS::publish(MicroROS::PublisherType type, int data) {
   switch (type) {
-    case DISTANCE:
+    case DISTANCE: {
       distanceMsg.data = data;
-      RCSOFTCHECK(rcl_publish(&distancePublisher, &distanceMsg, NULL));
+      rcl_ret_t x = rcl_publish(&distancePublisher, &distanceMsg, NULL);
+      RCSOFTCHECK(x);
+      // DEBUG_PRINTF("Published: (%d) %d\n", x, data);
       break;
-    default:
+    }
+    default: {
       break;
+    }
   }
-
-  // distanceMsg.data = data;
-  // RCSOFTCHECK(rcl_publish(&distancePublisher, &distanceMsg, NULL));
-  DEBUG_PRINT("Published: ");
-  DEBUG_PRINTLN(data);
 }
 
 void MicroROS::publish(MicroROS::PublisherType type, String data) {
   switch (type) {
-    case IMU:
+    case IMU: {
       imuMsg = data;
       RCSOFTCHECK(rcl_publish(&imuPublisher, &imuMsg, NULL));
       break;
-    default:
+    }
+    default: {
       break;
+    }
   }
 }
 
-  int MicroROS::receiveSubscription() {
-    std_msgs__msg__Int32 msg;
-    rcl_ret_t ret = rcl_take(&subscriber, &msg, NULL, NULL);
-    if (ret == RCL_RET_OK) {
-      DEBUG_PRINT("Received: ");
-      DEBUG_PRINTLN(msg.data);
-      return msg.data;
-    } else if (ret == RCL_RET_INVALID_ARGUMENT) {
-      DEBUG_PRINTLN("Invalid argument");
-    } else if (ret == RCL_RET_ERROR) {
-      DEBUG_PRINTLN("Error");
-    } else if (ret == RCL_RET_TIMEOUT) {
-      DEBUG_PRINTLN("Timeout");
-    } else if (ret == RCL_RET_BAD_ALLOC) {
-      DEBUG_PRINTLN("Bad alloc");
-    } else if (ret == RCL_RET_NODE_INVALID) {
-      DEBUG_PRINTLN("Node invalid");
-    } else if (ret == RCL_RET_NOT_INIT) {
-      DEBUG_PRINTLN("Not init");
-    } else {
-      DEBUG_PRINTF("Unknown error: %d", ret);
+rcl_publisher_t* MicroROS::getPublisher(MicroROS::PublisherType type) {
+  switch (type) {
+    case DISTANCE: {
+      return &distancePublisher;
     }
-    return -1;
+    case IMU: {
+      return &imuPublisher;
+    }
+    default: {
+      return NULL;
+    }
   }
+}
 
-  rcl_publisher_t* MicroROS::getPublisher(MicroROS::PublisherType type) {
-    switch (type) {
-      case DISTANCE:
-        return &distancePublisher;
-      default:
-        return NULL;
-    }
-  }
+void MicroROS::cmdVelSubCallback(const void* msgIn) {
+  const geometry_msgs__msg__Twist* msg =
+      (const geometry_msgs__msg__Twist*)msgIn;
+
+  DEBUG_PRINTF("Received: lX: %f, aZ: %f\n", msg->linear.x, msg->angular.z);
+}

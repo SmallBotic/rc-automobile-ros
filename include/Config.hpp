@@ -32,7 +32,9 @@
 #define QMC5883_ADDRESS 0x0D
 
 // ROS
+#define MICRO_ROS_ERROR_TIMEOUT 500
 #define MICRO_ROS_NODE_NAME "rc_automobile"
+#define MICRO_ROS_NODE_NAMESPACE ""
 #define MICRO_ROS_CMD_VEL_SUBSCRIPTION_TOPIC "/rc_automobile_ros/cmd_vel"
 #define MICRO_ROS_IMU_PUBLISH_TOPIC "/rc_automobile_ros/imu"
 #define MICRO_ROS_DISTANCE_PUBLISH_TOPIC "/rc_automobile_ros/distance"
