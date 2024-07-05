@@ -19,6 +19,9 @@ jobs:
           python-version: '3.10'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+        
+      - name: Locate Platformio
+        run: which pio
 
       - name: Activate PlatformIO environment
         run: source /home/runner/.platformio/penv/bin/activate
