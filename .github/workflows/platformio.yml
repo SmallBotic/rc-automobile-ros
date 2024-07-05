@@ -32,9 +32,9 @@ jobs:
           pio update
           pio upgrade --dev
           pio lib install
+          ls /home/runner/.platformio
+          ls /home/runner/.platformio/penv
           ls /home/runner/.platformio/penv/bin/
-          ls /home/runner/.platformio/penv/
-          ls /home/runner/.platformio/
 
       - name: Install Micro_ROS dependencies
         run: |
